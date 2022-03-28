@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '1.4.0'
+}
+
+group 'org.tzraeq'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+repositories {
+    // mavenCentral()
+    maven { url 'http://maven.aliyun.com/repository/public'}
+}
+
+dependencies {
+    implementation 'org.yaml:snakeyaml:1.30'
+
+    // lombok
+    compileOnly 'org.projectlombok:lombok:1.18.20'
+    annotationProcessor 'org.projectlombok:lombok:1.18.20'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+// See https://github.com/JetBrains/gradle-intellij-plugin/
+intellij {
+    version = '2019.3.1'
+    plugins = ['java']
+    updateSinceUntilBuild = false
+}
+
+patchPluginXml {
+    changeNotes = """
+      <h3>v1.0</h3>
+      <ul>
+          <li>可通过配置文件配置如何合并</li>
+      </ul>"""
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
