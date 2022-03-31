@@ -4,8 +4,8 @@
     <vendor email="tzraeq@163.com" url="https://gitee.com/baOZe">baOZe</vendor>
 
     <description><![CDATA[
-    这个插件可以很方便地将其他bean的字段合并到当前bean。</br>
-    This plugin can combine other bean fields to this bean easily.
+    这个插件可以很方便地将其他bean的字段合并到当前bean。
+    <br/>This plugin can combine other bean fields to this bean easily.
     ]]></description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
@@ -15,11 +15,14 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+        <toolWindow id="BeanCombiner" anchor="right" icon="BeanCombinerIcons.ToolWindow"
+                    factoryClass="org.tzraeq.idea.plugin.beancombiner.window.CombineWindowFactory"/>
     </extensions>
 
     <actions>
         <!-- Add your actions here -->
-        <action id="tzraeq.beancombiner.CombineAction" class="org.tzraeq.idea.plugin.beancombiner.action.CombineAction"
+        <action id="tzraeq.beancombiner.action.combine" class="org.tzraeq.idea.plugin.beancombiner.action.CombineAction"
+                icon="BeanCombinerIcons.ToolWindow"
                 text="Combine From" description="Bean Combiner">
             <add-to-group group-id="GenerateGroup" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift C"/>
