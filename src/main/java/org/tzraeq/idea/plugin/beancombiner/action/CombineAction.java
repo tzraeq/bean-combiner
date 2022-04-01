@@ -57,12 +57,14 @@ public class CombineAction extends AnAction {
                                         }
                                     }
                                 }*/
-                                PsiField[] fields = target.getAllFields();
-                                WriteCommandAction.runWriteCommandAction(project, () -> {
+//                                ApplicationManager.getApplication().runWriteAction(
+                                // NOTE withName 会出现在Edit菜单中的Undo XXXX，所以下一个版本要改为一个action，而不是多个
+                                WriteCommandAction.writeCommandAction(project).withName("Combine From " + fromClass.getName()).run(() -> {
+                                    PsiField[] fields = target.getAllFields();
                                     PsiMethod[] methods = fromClass.getAllMethods();
                                     for (PsiMethod method :
                                             methods) {
-                                        if(!method.hasParameters()) {
+                                        if(!method.getContainingClass().getName().equals("Object") && !method.hasParameters()) {
                                             String fieldName = getFieldName(method.getName());
                                             if(null != fieldName) {
                                                 PsiField targetField = null;
