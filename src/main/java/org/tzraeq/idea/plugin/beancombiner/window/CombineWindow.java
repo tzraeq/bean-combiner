@@ -1,16 +1,15 @@
 package org.tzraeq.idea.plugin.beancombiner.window;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.util.TreeClassChooser;
+import com.intellij.ide.util.TreeClassChooserFactory;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.actionSystem.EditorActionManager;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.CaretListener;
 import com.intellij.openapi.editor.event.EditorFactoryEvent;
 import com.intellij.openapi.editor.event.EditorFactoryListener;
-import com.intellij.openapi.editor.impl.EditorFactoryImpl;
-import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -20,7 +19,6 @@ import com.intellij.psi.PsiClass;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
 import org.tzraeq.idea.plugin.beancombiner.util.PsiClassUtil;
 
@@ -142,6 +140,7 @@ public class CombineWindow implements EditorFactoryListener {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
+            // TODO 重新读取当前类的配置，并刷新UI
             System.out.println(e);
         }
     }
@@ -154,7 +153,16 @@ public class CombineWindow implements EditorFactoryListener {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            System.out.println(e);
+            TreeClassChooser chooser = TreeClassChooserFactory.getInstance(e.getProject())
+                    .createAllProjectScopeChooser("Choose a source class");
+            chooser.showDialog();
+            PsiClass psiClass = chooser.getSelected();
+            if(null != psiClass) {
+                // TODO 将选择的类增加到当前类
+                datetimeLabel.setText(psiClass.getQualifiedName());
+            }else{
+                datetimeLabel.setText(null);
+            }
         }
     }
 
@@ -166,6 +174,7 @@ public class CombineWindow implements EditorFactoryListener {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
+            // TODO 将选择的类增从当前类移除
             System.out.println(e);
         }
     }
@@ -179,6 +188,7 @@ public class CombineWindow implements EditorFactoryListener {
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
             Editor editor = FileEditorManager.getInstance(e.getProject()).getSelectedTextEditor();
+            // TODO 应用到当前类并保存到配置
             System.out.println(e);
         }
     }

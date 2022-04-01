@@ -9,16 +9,15 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.ui.Messages;
-import com.intellij.psi.*;
-import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElementFactory;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiMethod;
 import org.jetbrains.annotations.NotNull;
-import org.snakeyaml.engine.v2.api.Load;
-import org.snakeyaml.engine.v2.api.LoadSettings;
+import org.jetbrains.annotations.Nullable;
 import org.tzraeq.idea.plugin.beancombiner.config.Config;
+import org.tzraeq.idea.plugin.beancombiner.util.PsiClassUtil;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.constructor.CustomClassLoaderConstructor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +35,7 @@ public class CombineAction extends AnAction {
 
         Editor editor = anActionEvent.getData(CommonDataKeys.EDITOR);
 
-        PsiClass target = getPsiClassByEditor(editor);
+        PsiClass target = PsiClassUtil.getPsiClassByEditor(editor);
         if(null != target) {
             Config config = loadConfig(ModuleUtilCore.findModuleForPsiElement(target));
             if (null != config) {
@@ -44,15 +43,41 @@ public class CombineAction extends AnAction {
                     if(target.getQualifiedName().equals(mapping.getTarget())) {
                         // TODO 多个类应该合并属性集
                         mapping.getCombine().forEach(from -> {
-                            PsiClass fromClass = getPsiClassByQualifiedName(from.getFrom());
+                            PsiClass fromClass = PsiClassUtil.getPsiClassByQualifiedName(project, from.getFrom());
                             if(null != fromClass) {
+                                // NOTE 目标bean按照字段的方式取出已有的字段名，因为通常都是为了编辑字段而使用本插件
+                                /*List<String> targetFieldNameList = new ArrayList<>();
+                                PsiMethod[] targetAllMethods = target.getAllMethods();
+                                for (PsiMethod method :
+                                        targetAllMethods) {
+                                    if(!method.hasParameters()) {
+                                        String fieldName = getFieldName(method);
+                                        if(null != fieldName) {
+                                            targetFieldNameList.add(fieldName);
+                                        }
+                                    }
+                                }*/
+                                PsiField[] fields = target.getAllFields();
                                 WriteCommandAction.runWriteCommandAction(project, () -> {
-                                    // TODO 应该遍历get方法，而不是field
-                                    // NOTE 继承来的也会被取出来
-                                    PsiField[] fields = fromClass.getAllFields();
-                                    for (PsiField field:
-                                            fields) {
-                                        target.add(PsiElementFactory.getInstance(project).createField(field.getName(), field.getType()));
+                                    PsiMethod[] methods = fromClass.getAllMethods();
+                                    for (PsiMethod method :
+                                            methods) {
+                                        if(!method.hasParameters()) {
+                                            String fieldName = getFieldName(method.getName());
+                                            if(null != fieldName) {
+                                                PsiField targetField = null;
+                                                for (PsiField field:
+                                                        fields) {
+                                                    if(field.getName().equals(fieldName)){// NOTE 重复
+                                                        targetField = field;
+                                                        break;
+                                                    }
+                                                }
+                                                if(null == targetField) {
+                                                    target.add(PsiElementFactory.getInstance(project).createField(fieldName, method.getReturnType()));
+                                                }
+                                            }
+                                        }
                                     }
                                 });
                             }
@@ -64,20 +89,33 @@ public class CombineAction extends AnAction {
         }
     }
 
-    private PsiClass getPsiClassByQualifiedName(String name) {
-        final PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(name, GlobalSearchScope.allScope(project));
+    /**
+     * 获得字段名，如果是非 get 和 is 方法，则返回null
+     * @param methodName
+     * @return
+     */
+    @Nullable
+    public String getFieldName(String methodName) {
 
-        return psiClass;
+        String name = methodName;
+        if (name.startsWith("get")) {
+            name = name.substring(3);
+        } else if (name.startsWith("is")) {
+            name = name.substring(2);
+        } else {
+            return null;
+        }
+
+        return name.substring(0, 1).toLowerCase() + name.substring(1);
     }
 
-    private PsiClass getPsiClassByEditor(Editor editor) {
-        PsiClass psiClass = null;
-        PsiFile file = PsiDocumentManager.getInstance(editor.getProject()).getPsiFile(editor.getDocument());
-        PsiElement element = file.findElementAt(editor.getCaretModel().getOffset());
-        if(element.getParent() instanceof PsiClass) {
-            psiClass = (PsiClass) element.getParent();
+    @Nullable
+    public String getFieldName(PsiMethod method) {
+        if(!method.hasParameters()) {
+            return getFieldName(method.getName());
+        }else{
+            return null;
         }
-        return psiClass;
     }
 
     private Config loadConfig(Module module) {

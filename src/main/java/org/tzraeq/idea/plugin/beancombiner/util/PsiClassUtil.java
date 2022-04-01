@@ -1,13 +1,16 @@
 package org.tzraeq.idea.plugin.beancombiner.util;
 
-import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.*;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.util.PsiEditorUtil;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtilBase;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 关于获取PsiClass的工具类
@@ -21,7 +24,7 @@ public class PsiClassUtil {
      * @param name
      * @return
      */
-    public static PsiClass getPsiClassByQualifiedName(Project project, String name) {
+    public static PsiClass getPsiClassByQualifiedName(@NotNull Project project, @NonNls @NotNull String name) {
         return getPsiClassByQualifiedName(project, name, GlobalSearchScope.allScope(project));
     }
 
@@ -33,7 +36,8 @@ public class PsiClassUtil {
      * @param scope
      * @return
      */
-    public static PsiClass getPsiClassByQualifiedName(Project project, String name, GlobalSearchScope scope) {
+    @Nullable
+    public static PsiClass getPsiClassByQualifiedName(@NotNull Project project, @NonNls @NotNull String name, @NotNull GlobalSearchScope scope) {
         return JavaPsiFacade.getInstance(project).findClass(name, scope);
     }
 
@@ -43,7 +47,8 @@ public class PsiClassUtil {
      * @param editor
      * @return
      */
-    public static PsiClass getPsiClassByEditor(Editor editor) {
+    @Nullable
+    public static PsiClass getPsiClassByEditor(@NotNull Editor editor) {
         PsiClass psiClass = null;
 //        PsiFile file = PsiUtilBase.getPsiFileInEditor(editor, editor.getProject());
 //        PsiFile file = PsiDocumentManager.getInstance(editor.getProject()).getPsiFile(editor.getDocument());
@@ -55,18 +60,8 @@ public class PsiClassUtil {
 
         } else if(null != (psiClass = PsiTreeUtil.getPrevSiblingOfType(element, PsiClass.class))) {
 
-        }// package和import 语句中暂时没处理
-        /*if (element.getParent() instanceof PsiClass) {// PsiWhiteSpace, PsiIdentifier:类名, PsiKeyword:class
-            element = element.getParent();
-        } else if (element.getNextSibling() instanceof PsiClass) {
-            element = element.getNextSibling();
-        } else if (element.getParent().getParent() instanceof PsiClass) {// PsiKeyword:public, PsiKeyword:extends
-            element = element.getParent().getParent();
-        } else if (element.getParent().getParent() instanceof PsiField) {
-            element = element.getParent().getParent().getParent();
-        } else {
-            return null;
-        }*/
+        }// package和import 语句中暂时没处理，还有java文件最后一个空行没有解析出来
+
         return psiClass;
     }
 
