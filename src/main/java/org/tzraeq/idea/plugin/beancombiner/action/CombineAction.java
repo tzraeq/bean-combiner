@@ -21,6 +21,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.List;
 
 public class CombineAction extends AnAction {
 
@@ -36,47 +37,54 @@ public class CombineAction extends AnAction {
         Editor editor = anActionEvent.getData(CommonDataKeys.EDITOR);
 
         PsiClass target = PsiClassUtil.getPsiClassByEditor(editor);
-        if(null != target) {
+        if (null != target) {
             Config config = loadConfig(ModuleUtilCore.findModuleForPsiElement(target));
             if (null != config) {
-                for (Config.Mapping mapping: config.getMapping()) {
-                    if(target.getQualifiedName().equals(mapping.getTarget())) {
-                        // TODO 多个类应该合并属性集
+                for (Config.Mapping mapping : config.getMapping()) {
+                    if (target.getQualifiedName().equals(mapping.getTarget())) {
+                        // NOTE 一个类一个ACTION，所以多个类合并了属性集
                         mapping.getCombine().forEach(from -> {
                             PsiClass fromClass = PsiClassUtil.getPsiClassByQualifiedName(project, from.getFrom());
-                            if(null != fromClass) {
-                                // NOTE 目标bean按照字段的方式取出已有的字段名，因为通常都是为了编辑字段而使用本插件
-                                /*List<String> targetFieldNameList = new ArrayList<>();
-                                PsiMethod[] targetAllMethods = target.getAllMethods();
-                                for (PsiMethod method :
-                                        targetAllMethods) {
-                                    if(!method.hasParameters()) {
-                                        String fieldName = getFieldName(method);
-                                        if(null != fieldName) {
-                                            targetFieldNameList.add(fieldName);
-                                        }
-                                    }
-                                }*/
-//                                ApplicationManager.getApplication().runWriteAction(
-                                // NOTE withName 会出现在Edit菜单中的Undo XXXX，所以下一个版本要改为一个action，而不是多个
-                                WriteCommandAction.writeCommandAction(project).withName("Combine From " + fromClass.getName()).run(() -> {
+                            List<Config.Mapping.From.Field> fromFields = from.getFields();
+                            if (null != fromClass) {
+                                // NOTE 目标bean按照字段的方式取出已有的字段名，因为通常都是为了编辑字段而使用本插件，配合lombok基本没有影响
+                                // TODO withName 会出现在Edit菜单中的Undo XXXX，所以下一个版本要改为一个action，而不是多个
+                                WriteCommandAction.writeCommandAction(project)
+                                        .withName("Combine From " + fromClass.getName()).run(() -> {
                                     PsiField[] fields = target.getAllFields();
                                     PsiMethod[] methods = fromClass.getAllMethods();
                                     for (PsiMethod method :
                                             methods) {
-                                        if(!method.getContainingClass().getName().equals("Object") && !method.hasParameters()) {
+                                        if (!method.getContainingClass().getName().equals("Object")
+                                                && !method.hasParameters()) {
                                             String fieldName = getFieldName(method.getName());
-                                            if(null != fieldName) {
+                                            if (null != fieldName) {// NOTE 符合get或者is方法命名规则
+                                                if (null != fromFields) { // NOTE 有进行筛选，有UI的情况下肯定 size > 0
+                                                    Config.Mapping.From.Field fromField = null;
+                                                    for (Config.Mapping.From.Field field :
+                                                            fromFields) {
+                                                        if (field.getSource().equals(fieldName)) {// NOTE 有匹配的配置项
+                                                            fromField = field;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (null != fromField) { // NOTE 有匹配的配置项
+                                                        fieldName = fromField.getTarget();
+                                                    } else { // NOTE 没有匹配的配置项
+                                                        continue;
+                                                    }
+                                                }
                                                 PsiField targetField = null;
-                                                for (PsiField field:
+                                                for (PsiField field :
                                                         fields) {
-                                                    if(field.getName().equals(fieldName)){// NOTE 重复
+                                                    if (field.getName().equals(fieldName)) {// NOTE 重复
                                                         targetField = field;
                                                         break;
                                                     }
                                                 }
-                                                if(null == targetField) {
-                                                    target.add(PsiElementFactory.getInstance(project).createField(fieldName, method.getReturnType()));
+                                                if (null == targetField) {
+                                                    target.add(PsiElementFactory.getInstance(project)
+                                                            .createField(fieldName, method.getReturnType()));
                                                 }
                                             }
                                         }
@@ -93,6 +101,7 @@ public class CombineAction extends AnAction {
 
     /**
      * 获得字段名，如果是非 get 和 is 方法，则返回null
+     *
      * @param methodName
      * @return
      */
@@ -113,9 +122,9 @@ public class CombineAction extends AnAction {
 
     @Nullable
     public String getFieldName(PsiMethod method) {
-        if(!method.hasParameters()) {
+        if (!method.hasParameters()) {
             return getFieldName(method.getName());
-        }else{
+        } else {
             return null;
         }
     }
@@ -126,7 +135,7 @@ public class CombineAction extends AnAction {
         ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
 //        File file = new File(module.getModuleFile().getParent().getPath(), CONFIG_FILE);
         File file = new File(rootManager.getContentRoots()[0].getPath(), CONFIG_FILE);
-        if(file.exists()) {
+        if (file.exists()) {
             try {
                 config = new Yaml().loadAs(new FileInputStream(file.getCanonicalPath()), Config.class);
             } catch (Exception e) {
