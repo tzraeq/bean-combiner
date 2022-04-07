@@ -12,11 +12,18 @@
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
+    <depends>org.jetbrains.plugins.yaml</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
         <toolWindow id="BeanCombiner" anchor="right" icon="BeanCombinerIcons.ToolWindow"
                     factoryClass="org.tzraeq.idea.plugin.beancombiner.window.CombineWindowFactory"/>
+        <fileType
+                name="beancombiner"
+                implementationClass="org.tzraeq.idea.plugin.beancombiner.lang.BeanCombinerFileType"
+                fieldName="INSTANCE"
+                language="yaml"
+                fileNames=".beancombiner"/>
     </extensions>
 
     <actions>

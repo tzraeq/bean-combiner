@@ -2,11 +2,10 @@ package org.tzraeq.idea.plugin.beancombiner.util;
 
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
+import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtilBase;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -63,6 +62,28 @@ public class PsiClassUtil {
         }// package和import 语句中暂时没处理，还有java文件最后一个空行没有解析出来
 
         return psiClass;
+    }
+
+    public static PsiClass getPsiClassByPsiElement(@NotNull PsiElement element) {
+        return PsiTreeUtil.getParentOfType(element, PsiClass.class);
+    }
+
+    /**
+     * 获得一个PsiIdentifier对应的PsiClass，注意，如果目标工程的build path等信息不正确，比如maven没有刷新，gradle没有同步的情况下，
+     * 大部分情况都会返回null
+     * @param element PsiIdentifier of PsiReference, PsiParameter, PsiField, PsiLocalVariable
+     * @return
+     */
+    public static PsiClass getPsiClassOfPsiIdentifier(@NotNull PsiElement element) {
+        element = element.getParent();
+        if(element instanceof PsiReference) {
+            element = ((PsiReference) element).resolve();
+        }
+
+        if(element instanceof PsiVariable) {
+            return PsiTypesUtil.getPsiClass(((PsiVariable)element).getType());
+        }
+        return null;
     }
 
     /*public static PsiClass getPsiClassByCaret(Caret caret) {

@@ -27,7 +27,7 @@ import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class CombineWindow implements EditorFactoryListener {
+public class CombineWindow {
     private JButton hideButton;
 
     private JBLabel datetimeLabel;
@@ -43,6 +43,7 @@ public class CombineWindow implements EditorFactoryListener {
         EditorFactory.getInstance().addEditorFactoryListener(editorListener, project);
         // 当前已经打开的Editor是没有监听的
         for (Editor editor : EditorFactory.getInstance().getAllEditors()) {
+//            editor.getSelectionModel().addSelectionListener(editorListener);
             editor.getCaretModel().addCaretListener(editorListener);
         }
 
@@ -79,8 +80,8 @@ public class CombineWindow implements EditorFactoryListener {
         content.setLayout(new BorderLayout());
         content.add(BorderLayout.NORTH, toolbar.getComponent());
         JBPanel body = new JBPanel();
-        body.setBorder(BorderFactory.createMatteBorder(1,0,0,0, Color.GRAY));
-        body.setBackground(Color.WHITE);
+//        body.setBorder(BorderFactory.createMatteBorder(1,0,0,0, Color.GRAY));
+//        body.setBackground(Color.WHITE);
 
         JBScrollPane scroller = new JBScrollPane(body, JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroller.setBorder(BorderFactory.createEmptyBorder());
@@ -94,11 +95,7 @@ public class CombineWindow implements EditorFactoryListener {
         return content;
     }
 
-    public void editorReleased(@NotNull EditorFactoryEvent editorFactoryEvent) {
-
-    }
-
-    class EditorListener implements FileEditorManagerListener, EditorFactoryListener, CaretListener {
+    class EditorListener implements FileEditorManagerListener, EditorFactoryListener, CaretListener{
         // FileEditorManagerListener
         public void selectionChanged(@NotNull FileEditorManagerEvent event) {
             Editor editor = event.getManager().getSelectedTextEditor();
@@ -112,6 +109,7 @@ public class CombineWindow implements EditorFactoryListener {
         }
 
         // CaretListener
+        // NOTE 会触发两次
         public void caretPositionChanged(@NotNull CaretEvent event) {
             PsiClass psiClass = PsiClassUtil.getPsiClassByEditor(event.getCaret().getEditor());
             if(null != psiClass) {
@@ -124,10 +122,12 @@ public class CombineWindow implements EditorFactoryListener {
         // EditorFactoryListener
         @Override
         public void editorCreated(@NotNull EditorFactoryEvent event) {
+//            event.getEditor().getSelectionModel().addSelectionListener(this);
             event.getEditor().getCaretModel().addCaretListener(this);
         }
 
         public void editorReleased(@NotNull EditorFactoryEvent event) {
+//            event.getEditor().getSelectionModel().removeSelectionListener(this);
             event.getEditor().getCaretModel().removeCaretListener(this);
         }
     }

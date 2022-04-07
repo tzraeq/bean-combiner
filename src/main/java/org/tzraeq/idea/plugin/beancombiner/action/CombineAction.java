@@ -9,10 +9,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElementFactory;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiMethod;
+import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.tzraeq.idea.plugin.beancombiner.config.Config;
@@ -26,7 +23,7 @@ import java.util.List;
 public class CombineAction extends AnAction {
 
     private static final String from = "org.tzraeq.entity.User";
-    private static final String CONFIG_FILE = ".beancombiner.yml";
+    private static final String CONFIG_FILE = ".beancombiner";
 
     private Project project;
 
@@ -45,7 +42,7 @@ public class CombineAction extends AnAction {
                         // NOTE 一个类一个ACTION，所以多个类合并了属性集
                         mapping.getCombine().forEach(from -> {
                             PsiClass fromClass = PsiClassUtil.getPsiClassByQualifiedName(project, from.getFrom());
-                            List<Config.Mapping.From.Field> fromFields = from.getFields();
+                            List<Config.Mapping.Combine.Field> fromFields = from.getFields();
                             if (null != fromClass) {
                                 // NOTE 目标bean按照字段的方式取出已有的字段名，因为通常都是为了编辑字段而使用本插件，配合lombok基本没有影响
                                 // TODO withName 会出现在Edit菜单中的Undo XXXX，所以下一个版本要改为一个action，而不是多个
@@ -55,13 +52,13 @@ public class CombineAction extends AnAction {
                                     PsiMethod[] methods = fromClass.getAllMethods();
                                     for (PsiMethod method :
                                             methods) {
-                                        if (!method.getContainingClass().getName().equals("Object")
-                                                && !method.hasParameters()) {
+                                        if (!method.hasParameters()
+                                                && !method.getContainingClass().getQualifiedName().equals(CommonClassNames.JAVA_LANG_OBJECT)) {
                                             String fieldName = getFieldName(method.getName());
                                             if (null != fieldName) {// NOTE 符合get或者is方法命名规则
                                                 if (null != fromFields) { // NOTE 有进行筛选，有UI的情况下肯定 size > 0
-                                                    Config.Mapping.From.Field fromField = null;
-                                                    for (Config.Mapping.From.Field field :
+                                                    Config.Mapping.Combine.Field fromField = null;
+                                                    for (Config.Mapping.Combine.Field field :
                                                             fromFields) {
                                                         if (field.getSource().equals(fieldName)) {// NOTE 有匹配的配置项
                                                             fromField = field;
