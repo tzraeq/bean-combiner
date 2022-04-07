@@ -10,6 +10,8 @@ import java.util.List;
 
 @Getter @Setter
 public class Config {
+    public final static String DEFAULT_VERSION = "1";
+
     private String version;
     private List<Mapping> mapping;
 
@@ -25,19 +27,25 @@ public class Config {
 
             public void merge(List<Field> fields) {
                 List<Field> configFields = this.fields;
-                this.fields = new ArrayList<>();
-                for (Field field : fields) {
-                    for (Field configField : configFields) {
-                        if(configField.getSource().equals(field.getSource())) {
-                            field.setTarget(configField.getTarget());
-                            field.setEnabled(true);
-                            configFields.remove(configField);
-                            break;
-                        }
+                if(null == configFields) {
+                    this.fields = fields;
+                    for (Field field : fields) {
+                        field.setEnabled(true);
                     }
-                    this.fields.add(field);
+                }else{
+                    this.fields = new ArrayList<>();
+                    for (Field field : fields) {
+                        for (Field configField : configFields) {
+                            if(configField.getSource().equals(field.getSource())) {
+                                field.setTarget(configField.getTarget());
+                                field.setEnabled(true);
+                                configFields.remove(configField);
+                                break;
+                            }
+                        }
+                        this.fields.add(field);
+                    }
                 }
-
             }
 
             @NoArgsConstructor

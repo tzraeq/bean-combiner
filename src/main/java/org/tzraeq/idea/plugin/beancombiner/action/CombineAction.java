@@ -5,25 +5,21 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.tzraeq.idea.plugin.beancombiner.config.Config;
+import org.tzraeq.idea.plugin.beancombiner.util.CombinerUtil;
+import org.tzraeq.idea.plugin.beancombiner.util.ConfigUtil;
 import org.tzraeq.idea.plugin.beancombiner.util.PsiClassUtil;
-import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
 
 public class CombineAction extends AnAction {
 
     private static final String from = "org.tzraeq.entity.User";
-    private static final String CONFIG_FILE = ".beancombiner";
 
     private Project project;
 
@@ -35,7 +31,13 @@ public class CombineAction extends AnAction {
 
         PsiClass target = PsiClassUtil.getPsiClassByEditor(editor);
         if (null != target) {
-            Config config = loadConfig(ModuleUtilCore.findModuleForPsiElement(target));
+            Config config = null;
+            try {
+                config = ConfigUtil.load(ModuleUtilCore.findModuleForPsiElement(target));
+            } catch (IOException e) {
+
+                e.printStackTrace();
+            }
             if (null != config) {
                 for (Config.Mapping mapping : config.getMapping()) {
                     if (target.getQualifiedName().equals(mapping.getTarget())) {
@@ -54,7 +56,7 @@ public class CombineAction extends AnAction {
                                             methods) {
                                         if (!method.hasParameters()
                                                 && !method.getContainingClass().getQualifiedName().equals(CommonClassNames.JAVA_LANG_OBJECT)) {
-                                            String fieldName = getFieldName(method.getName());
+                                            String fieldName = CombinerUtil.getFieldName(method.getName());
                                             if (null != fieldName) {// NOTE 符合get或者is方法命名规则
                                                 if (null != fromFields) { // NOTE 有进行筛选，有UI的情况下肯定 size > 0
                                                     Config.Mapping.Combine.Field fromField = null;
@@ -96,50 +98,4 @@ public class CombineAction extends AnAction {
         }
     }
 
-    /**
-     * 获得字段名，如果是非 get 和 is 方法，则返回null
-     *
-     * @param methodName
-     * @return
-     */
-    @Nullable
-    public String getFieldName(String methodName) {
-
-        String name = methodName;
-        if (name.startsWith("get")) {
-            name = name.substring(3);
-        } else if (name.startsWith("is")) {
-            name = name.substring(2);
-        } else {
-            return null;
-        }
-
-        return name.substring(0, 1).toLowerCase() + name.substring(1);
-    }
-
-    @Nullable
-    public String getFieldName(PsiMethod method) {
-        if (!method.hasParameters()) {
-            return getFieldName(method.getName());
-        } else {
-            return null;
-        }
-    }
-
-    private Config loadConfig(Module module) {
-        Config config = null;
-        // NOTE 多模块不知道是不是适用
-        ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
-//        File file = new File(module.getModuleFile().getParent().getPath(), CONFIG_FILE);
-        File file = new File(rootManager.getContentRoots()[0].getPath(), CONFIG_FILE);
-        if (file.exists()) {
-            try {
-                config = new Yaml().loadAs(new FileInputStream(file.getCanonicalPath()), Config.class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        return config;
-    }
 }
