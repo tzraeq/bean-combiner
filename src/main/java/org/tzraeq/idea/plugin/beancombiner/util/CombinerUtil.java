@@ -37,13 +37,17 @@ public class CombinerUtil {
      * @return
      */
     public static List<Config.Mapping.Combine.Field> getFields(PsiClass clazz) {
+        return getFields(clazz, false);
+    }
+
+    public static List<Config.Mapping.Combine.Field> getFields(PsiClass clazz, boolean defaultEnabled) {
         List<Config.Mapping.Combine.Field> fields = new ArrayList<>();
         PsiMethod[] methods = clazz.getAllMethods();
         for (PsiMethod method : methods) {
             if (!method.hasParameters()
                     && !method.getContainingClass().getQualifiedName().equals(CommonClassNames.JAVA_LANG_OBJECT)) {
                 String fieldName = CombinerUtil.getFieldName(method.getName());
-                fields.add(new Config.Mapping.Combine.Field(fieldName, fieldName));
+                fields.add(new Config.Mapping.Combine.Field(fieldName, fieldName).setEnabled(defaultEnabled));
             }
         }
 

@@ -4,6 +4,7 @@
  */
 package org.tzraeq.idea.plugin.beancombiner.ux;
 
+import com.intellij.ui.components.JBLabel;
 import org.jdesktop.swingx.renderer.CellContext;
 import org.jdesktop.swingx.renderer.ComponentProvider;
 
@@ -19,13 +20,13 @@ public class CheckTreeCellProvider extends ComponentProvider<JPanel> {
 
     private CheckTreeSelectionModel selectionModel;
     private TristateCheckBox _checkBox = null;
-    private JLabel _label = null;
+    private JBLabel _label = null;
 
     public CheckTreeCellProvider(CheckTreeSelectionModel selectionModel) {
         this.selectionModel = selectionModel;
         _checkBox = new TristateCheckBox(); //  创建一个TristateCheckBox实例
         _checkBox.setOpaque(false); //  设置TristateCheckBox不绘制背景
-        _label = new JLabel();  //  创建一个JLabel实例
+        _label = new JBLabel();  //  创建一个JLabel实例
     }
 
     @Override

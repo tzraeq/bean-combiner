@@ -4,6 +4,8 @@
  */
 package org.tzraeq.idea.plugin.beancombiner.ux;
 
+import com.intellij.ui.components.JBCheckBox;
+
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ActionMapUIResource;
@@ -25,13 +27,13 @@ import java.awt.event.*;
  * 6. You have to make a TristateDecorator as a button model that
  * wraps the original button model and does state management.
  */
-public class TristateCheckBox extends JCheckBox {
+public class TristateCheckBox extends JBCheckBox {
 
     private final TristateDecorator decorator;
     private CheckListener checkListener;
 
     public TristateCheckBox(String text, Icon icon, Boolean initial) {
-        super(text, icon);
+        super(text, null==initial?false:true);
         // Add a listener for when the mouse is pressed
         super.addMouseListener(new MouseAdapter() {
 

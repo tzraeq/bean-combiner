@@ -44,4 +44,9 @@ public class MappingNode extends ConfigTreeTableNode {
         add(node);
         return node;
     }
+
+    public void remove(CombineNode node) {
+        super.remove(node);
+        mapping.getCombine().remove(node.getUserObject());
+    }
 }

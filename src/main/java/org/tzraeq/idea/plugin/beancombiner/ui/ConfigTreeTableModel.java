@@ -4,6 +4,7 @@ import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 import org.jdesktop.swingx.treetable.TreeTableNode;
 import org.tzraeq.idea.plugin.beancombiner.config.Config;
 
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,10 +69,10 @@ public class ConfigTreeTableModel extends AbstractTreeTableModel {
     }
 
     public List getCheckedNodes() {
-        return getCheckedNodes((ConfigTreeTableNode)getRoot());
+        return getCheckedNodes((TreeTableNode)getRoot());
     }
 
-    private List getCheckedNodes(ConfigTreeTableNode treeTableNode) {
+    public List getCheckedNodes(TreeTableNode treeTableNode) {
         List<ConfigTreeTableNode> list = new ArrayList<>();
         if(null != treeTableNode) {
             int childCount = treeTableNode.getChildCount();
@@ -89,6 +90,11 @@ public class ConfigTreeTableModel extends AbstractTreeTableModel {
         return list;
     }
 
+    /**
+     * 添加后选中状态不能正确显示
+     * @param combine
+     * @return
+     */
     public TreeTableNode addCombine(Config.Mapping.Combine combine) {
         MappingNode mappingNode = (MappingNode) getRoot();
         CombineNode node = mappingNode.add(combine);
@@ -96,9 +102,16 @@ public class ConfigTreeTableModel extends AbstractTreeTableModel {
         return node;
     }
 
-    public TreeTableNode[] getPathToRoot(TreeTableNode aNode) {
-        List<TreeTableNode> path = new ArrayList<TreeTableNode>();
-        TreeTableNode node = aNode;
+    public void removeCombineNode(CombineNode node) {
+        MappingNode mappingNode = (MappingNode)node.getParent();
+        int index = mappingNode.getIndex(node);
+        mappingNode.remove(node);
+        modelSupport.fireChildRemoved(new TreePath(getPathToRoot(mappingNode)), index, node);
+    }
+
+    public TreeNode[] getPathToRoot(TreeNode aNode) {
+        List<TreeNode> path = new ArrayList<TreeNode>();
+        TreeNode node = aNode;
 
         while (node != root) {
             path.add(0, node);
@@ -110,11 +123,15 @@ public class ConfigTreeTableModel extends AbstractTreeTableModel {
             path.add(0, node);
         }
 
-        return path.toArray(new TreeTableNode[0]);
+        return path.toArray(new TreeNode[0]);
     }
 
     public void setRoot(Config.Mapping mapping) {
-        this.root = new MappingNode(mapping);
+        if(null != mapping) {
+            this.root = new MappingNode(mapping);
+        } else {
+            this.root = null;
+        }
         this.modelSupport.fireNewRoot();
     }
 }

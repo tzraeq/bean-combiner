@@ -1,12 +1,9 @@
 package org.tzraeq.idea.plugin.beancombiner.window;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.ide.util.TreeClassChooser;
 import com.intellij.ide.util.TreeClassChooserFactory;
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
-import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
@@ -22,31 +19,36 @@ import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.psi.PsiClass;
-import com.intellij.ui.components.JBLabel;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.util.PsiUtilBase;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
-import org.jdesktop.swingx.treetable.SimpleFileSystemModel;
+import org.jdesktop.swingx.treetable.TreeTableNode;
 import org.jetbrains.annotations.NotNull;
 import org.tzraeq.idea.plugin.beancombiner.config.Config;
+import org.tzraeq.idea.plugin.beancombiner.ui.CombineNode;
 import org.tzraeq.idea.plugin.beancombiner.ui.ConfigTreeTable;
 import org.tzraeq.idea.plugin.beancombiner.ui.ConfigTreeTableModel;
+import org.tzraeq.idea.plugin.beancombiner.ui.ConfigTreeTableNode;
 import org.tzraeq.idea.plugin.beancombiner.util.CombinerUtil;
 import org.tzraeq.idea.plugin.beancombiner.util.ConfigUtil;
 import org.tzraeq.idea.plugin.beancombiner.util.NotificationUtil;
 import org.tzraeq.idea.plugin.beancombiner.util.PsiClassUtil;
 
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class CombineWindow {
     private JBPanel content;
 
     private ConfigTreeTable configTreeTable;
+    private ConfigTreeTableModel treeTableModel;
+    private ConfigTreeTableNode node;
 
     public CombineWindow(Project project, ToolWindow toolWindow) {
 
@@ -57,13 +59,13 @@ public class CombineWindow {
         EditorFactory.getInstance().addEditorFactoryListener(editorListener, project);
         // 当前已经打开的Editor是没有监听的
         for (Editor editor : EditorFactory.getInstance().getAllEditors()) {
-//            editor.getSelectionModel().addSelectionListener(editorListener);
-            editor.getCaretModel().addCaretListener(editorListener);
+            addCaretListener(editor, editorListener);
         }
 
         // 分析当前打开的Editor
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
         if(null != editor) {
+            // NOTE 如果IDEA刚启动，这个时候有很大几率正在刷新索引，所以必须用下面的方式
             DumbService.getInstance(editor.getProject()).runWhenSmart(() -> {
                 loadConfig(editor);
             });
@@ -90,12 +92,17 @@ public class CombineWindow {
         content.setLayout(new BorderLayout());
         content.add(BorderLayout.NORTH, toolbar.getComponent());
 
-        configTreeTable = new ConfigTreeTable(new ConfigTreeTableModel());
+        treeTableModel = new ConfigTreeTableModel();
+        configTreeTable = new ConfigTreeTable(treeTableModel);
+        configTreeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         configTreeTable.setRootVisible(true); //  显示根结点
 
-        JBPanel body = new JBPanel();
-//        body.setBorder(BorderFactory.createMatteBorder(1,0,0,0, Color.GRAY));
-//        body.setBackground(Color.WHITE);
+        configTreeTable.addTreeSelectionListener(e -> {
+            TreePath newLeadSelectionPath = e.getNewLeadSelectionPath();
+            if(null != newLeadSelectionPath) {// NOTE 移除节点时也会触发
+                node = (ConfigTreeTableNode) newLeadSelectionPath.getLastPathComponent();
+            }
+        });
 
         JBScrollPane scroller = new JBScrollPane(configTreeTable, JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroller.setBorder(BorderFactory.createEmptyBorder());
@@ -114,9 +121,10 @@ public class CombineWindow {
         if(null != psiClass) {
             if(this.psiClass != psiClass) {// NOTE 有变更才进行刷新
                 this.psiClass = psiClass;
+                mapping = null;
                 try {
                     Config config = ConfigUtil.load(ModuleUtilCore.findModuleForPsiElement(psiClass));
-                    Config.Mapping mapping = null;
+
                     if(null != config) {
                         List<Config.Mapping> mappingList = config.getMapping();
                         for (Config.Mapping m : mappingList) {
@@ -137,7 +145,7 @@ public class CombineWindow {
                     }
                     // TODO 合并到具体的类
                     // TODO 渲染到TreeTable
-                    ((ConfigTreeTableModel) configTreeTable.getTreeTableModel()).setRoot(mapping);
+                    treeTableModel.setRoot(mapping);
                     configTreeTable.refreshSelection();
                     configTreeTable.expandAll();  // NOTE 展开全部节点，一定要最后做，否则会影响model中的选中值，下一版再修正吧
                 } catch (IOException e) {
@@ -150,15 +158,40 @@ public class CombineWindow {
 
     }
 
+    private void addCaretListener(Editor editor, CaretListener caretListener) {
+        if(PsiUtilBase.getPsiFileInEditor(editor, editor.getProject())
+                instanceof PsiJavaFile) {
+//                editor.getSelectionModel().addSelectionListener(this);
+            editor.getCaretModel().addCaretListener(caretListener);
+        }
+    }
+
+    private void removeCaretListener(Editor editor, CaretListener caretListener) {
+        if(PsiUtilBase.getPsiFileInEditor(editor, editor.getProject())
+                instanceof PsiJavaFile) {
+//                editor.getSelectionModel().removeSelectionListener(this);
+            editor.getCaretModel().removeCaretListener(caretListener);
+        }
+    }
+
+    private void clearTreeTable() {
+        treeTableModel.setRoot(null);
+        psiClass = null;
+        mapping = null;
+    }
+
     class EditorListener implements FileEditorManagerListener, EditorFactoryListener, CaretListener{
         // FileEditorManagerListener
         public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-            Editor editor = event.getManager().getSelectedTextEditor();
-            loadConfig(editor);
+            if(event.getNewFile().getFileType() instanceof JavaFileType) {
+                Editor editor = event.getManager().getSelectedTextEditor();
+                loadConfig(editor);
+            } else {
+                clearTreeTable();
+            }
         }
 
         // CaretListener
-        // NOTE 会触发两次
         public void caretPositionChanged(@NotNull CaretEvent event) {
             Editor editor = event.getCaret().getEditor();
             loadConfig(editor);
@@ -167,13 +200,11 @@ public class CombineWindow {
         // EditorFactoryListener
         @Override
         public void editorCreated(@NotNull EditorFactoryEvent event) {
-//            event.getEditor().getSelectionModel().addSelectionListener(this);
-            event.getEditor().getCaretModel().addCaretListener(this);
+            addCaretListener(event.getEditor(), this);
         }
 
         public void editorReleased(@NotNull EditorFactoryEvent event) {
-//            event.getEditor().getSelectionModel().removeSelectionListener(this);
-            event.getEditor().getCaretModel().removeCaretListener(this);
+            removeCaretListener(event.getEditor(), this);
         }
     }
 
@@ -193,7 +224,7 @@ public class CombineWindow {
     class AddAction extends AnAction {
 
         AddAction() {
-            super("Add a source class to the mapping", "", AllIcons.General.Add);
+            super("Add a source class to the mapping", "", AllIcons.ToolbarDecorator.AddClass);
         }
 
         @Override
@@ -201,8 +232,32 @@ public class CombineWindow {
             TreeClassChooser chooser = TreeClassChooserFactory.getInstance(e.getProject())
                     .createAllProjectScopeChooser("Choose a source class");
             chooser.showDialog();
-            PsiClass psiClass = chooser.getSelected();
+            PsiClass from = chooser.getSelected();
             // TODO 解析并新增一个 Source Class，需要判断当前 Mapping 中是否已经有了
+            if (null != psiClass) {
+                for (Config.Mapping.Combine combine : mapping.getCombine()) {
+                    if(combine.getFrom().equals(from.getQualifiedName())) {
+                        return;
+                    }
+                }
+                Config.Mapping.Combine combine = new Config.Mapping.Combine();
+                combine.setFrom(from.getQualifiedName());
+                combine.setFields(CombinerUtil.getFields(from, true));
+
+
+                TreeTableNode treeTableNode = treeTableModel.addCombine(combine);
+                if(!configTreeTable.isSelected((TreeNode)treeTableModel.getRoot())){
+                    // NOTE 如果跟没有被完全选中，则需要调用下面的函数
+                    List checkedNodes = treeTableModel.getCheckedNodes(treeTableNode);
+                    configTreeTable.addPathsByNodes(checkedNodes);
+                }
+                configTreeTable.expand(treeTableNode);
+
+                /*mapping.getCombine().add(combine);
+                treeTableModel.setRoot(mapping);
+                configTreeTable.refreshSelection();
+                configTreeTable.expandAll();*/
+            }
         }
     }
 
@@ -214,8 +269,10 @@ public class CombineWindow {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            // TODO 将选择的类增从当前类移除
-            System.out.println(e);
+            if(null != node
+                    && node instanceof CombineNode) {
+                treeTableModel.removeCombineNode((CombineNode) node);
+            }
         }
     }
 

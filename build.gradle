@@ -1,3 +1,4 @@
+// gradle core plugin
 plugins {
     id 'java'
     id 'org.jetbrains.intellij' version '1.4.0'
@@ -14,6 +15,7 @@ repositories {
 }
 
 dependencies {
+    // 就IDEA有snakeyaml的引用，我们也还是需要使用我们自己的库，因为是相互独立的classloader
     implementation 'org.yaml:snakeyaml:1.30'
 
     // lombok
