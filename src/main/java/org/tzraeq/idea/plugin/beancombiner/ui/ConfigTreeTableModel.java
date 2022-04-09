@@ -11,7 +11,7 @@ import java.util.List;
 
 public class ConfigTreeTableModel extends AbstractTreeTableModel {
 
-    private String[] columnNames = {"", "Target"/*, "Enabled"*/};
+    private String[] columnNames = {"Source", "Target"/*, "Enabled"*/};
     private Class[] columnTypes = {String.class, String.class/*, Boolean.class*/};
 
     public ConfigTreeTableModel() {

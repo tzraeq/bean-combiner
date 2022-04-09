@@ -67,7 +67,7 @@ public class CombineWindow {
         if(null != editor) {
             // NOTE 如果IDEA刚启动，这个时候有很大几率正在刷新索引，所以必须用下面的方式
             DumbService.getInstance(editor.getProject()).runWhenSmart(() -> {
-                loadConfig(editor);
+                loadConfig(editor, false);
             });
         }
     }
@@ -80,6 +80,8 @@ public class CombineWindow {
         actions.add(new RemoveAction());
         actions.addSeparator();
         actions.add(new ApplyAction());
+        actions.add(new ExpandAllAction());
+        actions.add(new CollapseAllAction());
 
         ActionToolbar toolbar = actionManager.createActionToolbar("BeanCombinerToolBar", actions, true);
         toolbar.setLayoutPolicy(ActionToolbar.AUTO_LAYOUT_POLICY);
@@ -116,10 +118,10 @@ public class CombineWindow {
     private Config.Mapping mapping = null;
     private PsiClass psiClass = null;
 
-    private void loadConfig(Editor editor) {
+    private void loadConfig(Editor editor, boolean force) {
         PsiClass psiClass = PsiClassUtil.getPsiClassByEditor(editor);
         if(null != psiClass) {
-            if(this.psiClass != psiClass) {// NOTE 有变更才进行刷新
+            if(this.psiClass != psiClass || force) {// NOTE 有变更才进行刷新
                 this.psiClass = psiClass;
                 mapping = null;
                 try {
@@ -185,7 +187,7 @@ public class CombineWindow {
         public void selectionChanged(@NotNull FileEditorManagerEvent event) {
             if(event.getNewFile().getFileType() instanceof JavaFileType) {
                 Editor editor = event.getManager().getSelectedTextEditor();
-                loadConfig(editor);
+                loadConfig(editor, false);
             } else {
                 clearTreeTable();
             }
@@ -194,7 +196,7 @@ public class CombineWindow {
         // CaretListener
         public void caretPositionChanged(@NotNull CaretEvent event) {
             Editor editor = event.getCaret().getEditor();
-            loadConfig(editor);
+            loadConfig(editor, false);
         }
 
         // EditorFactoryListener
@@ -216,8 +218,8 @@ public class CombineWindow {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            // TODO 重新读取当前类的配置，并刷新UI
-            System.out.println(e);
+            Editor editor = FileEditorManager.getInstance(e.getProject()).getSelectedTextEditor();
+            loadConfig(editor, true);
         }
     }
 
@@ -287,6 +289,31 @@ public class CombineWindow {
             Editor editor = FileEditorManager.getInstance(e.getProject()).getSelectedTextEditor();
             // TODO 应用到当前类并保存到配置
             System.out.println(e);
+        }
+    }
+
+    class ExpandAllAction extends AnAction {
+
+        ExpandAllAction() {
+            super("Commit changes to this class", "", AllIcons.Actions.Expandall);
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            configTreeTable.expandAll();
+        }
+    }
+
+    class CollapseAllAction extends AnAction {
+
+        CollapseAllAction() {
+            super("Commit changes to this class", "", AllIcons.Actions.Collapseall);
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            configTreeTable.collapseAll();
+            configTreeTable.expand(((TreeNode) treeTableModel.getRoot()));
         }
     }
 }
