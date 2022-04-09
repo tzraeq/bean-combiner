@@ -10,7 +10,7 @@ version '1.0-SNAPSHOT'
 apply plugin: 'java'
 
 repositories {
-    // mavenCentral()
+//     mavenCentral()
     maven { url 'http://maven.aliyun.com/repository/public'}
 }
 
@@ -39,7 +39,7 @@ patchPluginXml {
     changeNotes = """
       <h3>v1.0</h3>
       <ul>
-          <li>可通过配置文件配置如何合并</li>
+          <li>可通过tool window快速操作合并，并将配置保存在项目根目录</li>
       </ul>"""
 }
 

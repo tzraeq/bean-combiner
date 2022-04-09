@@ -28,11 +28,5 @@
 
     <actions>
         <!-- Add your actions here -->
-        <action id="tzraeq.beancombiner.action.combine" class="org.tzraeq.idea.plugin.beancombiner.action.CombineAction"
-                icon="BeanCombinerIcons.ToolWindow"
-                text="Combine From" description="Bean Combiner">
-            <add-to-group group-id="GenerateGroup" anchor="last"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift C"/>
-        </action>
     </actions>
 </idea-plugin>
