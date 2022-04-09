@@ -1,8 +1,13 @@
 package org.tzraeq.idea.plugin.beancombiner.util;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
-import org.jetbrains.annotations.Nullable;
 import org.tzraeq.idea.plugin.beancombiner.config.Config;
 import org.yaml.snakeyaml.Yaml;
 
@@ -27,7 +32,8 @@ public class ConfigUtil {
 //        File file = new File(module.getModuleFile().getParent().getPath(), CONFIG_FILE);
         File file = new File(rootManager.getContentRoots()[0].getPath(), CONFIG_FILE);
         if (file.exists()) {
-            config = new Yaml().loadAs(new FileInputStream(file.getCanonicalPath()), Config.class);
+            ObjectMapper mapper = new ObjectMapper(YAMLFactory.builder().build());
+            config = mapper.readValue(file, Config.class);
         }else{
             return null;
         }
@@ -38,8 +44,10 @@ public class ConfigUtil {
     public static void store(Module module, Config config) throws IOException {
         ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
         File file = new File(rootManager.getContentRoots()[0].getPath(), CONFIG_FILE);
-        FileWriter writer = new FileWriter(file);
-        new Yaml().dump(config, writer);
+        ObjectMapper mapper = new ObjectMapper(YAMLFactory.builder()
+                .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER) // NOTE 文档分割线
+                .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES) // NOTE 字符串引号
+                .build());
+        mapper.writeValue(file, config);
     }
-
 }

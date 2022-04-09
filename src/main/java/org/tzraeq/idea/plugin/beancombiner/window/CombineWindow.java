@@ -5,6 +5,7 @@ import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.ide.util.TreeClassChooser;
 import com.intellij.ide.util.TreeClassChooserFactory;
 import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.CaretEvent;
@@ -18,8 +19,7 @@ import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.*;
 import com.intellij.psi.util.PsiUtilBase;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
@@ -103,6 +103,8 @@ public class CombineWindow {
             TreePath newLeadSelectionPath = e.getNewLeadSelectionPath();
             if(null != newLeadSelectionPath) {// NOTE 移除节点时也会触发
                 node = (ConfigTreeTableNode) newLeadSelectionPath.getLastPathComponent();
+            } else {
+                node = null;
             }
         });
 
@@ -115,6 +117,7 @@ public class CombineWindow {
         return content;
     }
 
+    private Config config = null;
     private Config.Mapping mapping = null;
     private PsiClass psiClass = null;
 
@@ -125,7 +128,7 @@ public class CombineWindow {
                 this.psiClass = psiClass;
                 mapping = null;
                 try {
-                    Config config = ConfigUtil.load(ModuleUtilCore.findModuleForPsiElement(psiClass));
+                    config = ConfigUtil.load(ModuleUtilCore.findModuleForPsiElement(psiClass));
 
                     if(null != config) {
                         List<Config.Mapping> mappingList = config.getMapping();
@@ -141,9 +144,15 @@ public class CombineWindow {
                         mapping.setTarget(psiClass.getQualifiedName());
                         mapping.setCombine(new ArrayList<>());
                     } else {
+                        List combineList = new ArrayList();
                         for (Config.Mapping.Combine combine : mapping.getCombine()) {
-                            combine.merge(CombinerUtil.getFields(PsiClassUtil.getPsiClassByQualifiedName(editor.getProject(), combine.getFrom())));
+                            PsiClass fromClass = PsiClassUtil.getPsiClassByQualifiedName(editor.getProject(), combine.getFrom());
+                            if (null != fromClass) {
+                                combine.merge(CombinerUtil.getFields(fromClass));
+                                combineList.add(combine);
+                            }
                         }
+                        mapping.setCombine(combineList);
                     }
                     // TODO 合并到具体的类
                     // TODO 渲染到TreeTable
@@ -154,11 +163,40 @@ public class CombineWindow {
                     NotificationUtil.notifyError(editor.getProject(), "读取配置时发生IO异常：" + e.getMessage());
                 }
             }
-        }else{// NOTE 如果不是类
-            // TODO 清空
         }
-
     }
+
+    /*private void loadConfig(PsiClass psiClass) {
+        try {
+            config = ConfigUtil.load(ModuleUtilCore.findModuleForPsiElement(psiClass));
+
+            if(null != config) {
+                List<Config.Mapping> mappingList = config.getMapping();
+                for (Config.Mapping m : mappingList) {
+                    if(m.getTarget().equals(psiClass.getQualifiedName())) {
+                        mapping = m;
+                        break;
+                    }
+                }
+            }
+            if(null == mapping) {
+                mapping = new Config.Mapping();
+                mapping.setTarget(psiClass.getQualifiedName());
+                mapping.setCombine(new ArrayList<>());
+            } else {
+                for (Config.Mapping.Combine combine : mapping.getCombine()) {
+                    combine.merge(CombinerUtil.getFields(PsiClassUtil.getPsiClassByQualifiedName(psiClass.getProject(), combine.getFrom())));
+                }
+            }
+            // TODO 合并到具体的类
+            // TODO 渲染到TreeTable
+            treeTableModel.setRoot(mapping);
+            configTreeTable.refreshSelection();
+            configTreeTable.expandAll();  // NOTE 展开全部节点，一定要最后做，否则会影响model中的选中值，下一版再修正吧
+        } catch (IOException e) {
+            NotificationUtil.notifyError(psiClass.getProject(), "读取配置时发生IO异常：" + e.getMessage());
+        }
+    }*/
 
     private void addCaretListener(Editor editor, CaretListener caretListener) {
         if(PsiUtilBase.getPsiFileInEditor(editor, editor.getProject())
@@ -218,8 +256,10 @@ public class CombineWindow {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            Editor editor = FileEditorManager.getInstance(e.getProject()).getSelectedTextEditor();
-            loadConfig(editor, true);
+            if(null != psiClass) {
+                Editor editor = FileEditorManager.getInstance(e.getProject()).getSelectedTextEditor();
+                loadConfig(editor, true);
+            }
         }
     }
 
@@ -231,12 +271,13 @@ public class CombineWindow {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            TreeClassChooser chooser = TreeClassChooserFactory.getInstance(e.getProject())
-                    .createAllProjectScopeChooser("Choose a source class");
-            chooser.showDialog();
-            PsiClass from = chooser.getSelected();
-            // TODO 解析并新增一个 Source Class，需要判断当前 Mapping 中是否已经有了
             if (null != psiClass) {
+                TreeClassChooser chooser = TreeClassChooserFactory.getInstance(e.getProject())
+                        .createAllProjectScopeChooser("Choose a source class");
+                chooser.showDialog();
+                PsiClass from = chooser.getSelected();
+                // TODO 解析并新增一个 Source Class，需要判断当前 Mapping 中是否已经有了
+
                 for (Config.Mapping.Combine combine : mapping.getCombine()) {
                     if(combine.getFrom().equals(from.getQualifiedName())) {
                         return;
@@ -259,6 +300,7 @@ public class CombineWindow {
                 treeTableModel.setRoot(mapping);
                 configTreeTable.refreshSelection();
                 configTreeTable.expandAll();*/
+
             }
         }
     }
@@ -286,9 +328,42 @@ public class CombineWindow {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            Editor editor = FileEditorManager.getInstance(e.getProject()).getSelectedTextEditor();
-            // TODO 应用到当前类并保存到配置
-            System.out.println(e);
+            if (null != psiClass) {
+//                Editor editor = FileEditorManager.getInstance(e.getProject()).getSelectedTextEditor();
+//                PsiClass target = PsiClassUtil.getPsiClassByEditor(editor);
+                PsiClass target = psiClass;
+                if(null != target) {
+                    try {
+                        ConfigUtil.store(ModuleUtilCore.findModuleForPsiElement(psiClass), config);
+                        mapping.getCombine().forEach( combine -> {
+                            WriteCommandAction.writeCommandAction(target.getProject())
+                                    .withName("Combine From " + combine.getFrom()).run(() -> {
+                                PsiField[] fields = target.getAllFields();
+                                PsiClass fromClass = PsiClassUtil.getPsiClassByQualifiedName(target.getProject(), combine.getFrom());
+                                combine.getFields().forEach(field -> {
+                                    if (field.getEnabled()) {
+                                        PsiField targetField = null;
+                                        for (PsiField psiField : fields) {
+                                            if (field.getTarget().equals(psiField.getName())) {// NOTE 发现重复
+                                                targetField = psiField;
+                                                break;
+                                            }
+                                        }
+                                        if (null == targetField) { // NOTE 如果没有重复字段
+                                            PsiMethod getter = CombinerUtil.getGetter(fromClass, field.getSource());
+                                            target.add(PsiElementFactory.getInstance(target.getProject())
+                                                    .createField(field.getTarget(), getter.getReturnType()));
+                                        }
+                                    }
+                                });
+                            });
+                        });
+
+                    } catch (IOException exception) {
+                        NotificationUtil.notifyError(target.getProject(), "保存配置时发生IO异常：" + exception.getMessage());
+                    }
+                }
+            }
         }
     }
 
@@ -300,7 +375,9 @@ public class CombineWindow {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            configTreeTable.expandAll();
+            if(null != psiClass) {
+                configTreeTable.expandAll();
+            }
         }
     }
 
@@ -312,8 +389,10 @@ public class CombineWindow {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            configTreeTable.collapseAll();
-            configTreeTable.expand(((TreeNode) treeTableModel.getRoot()));
+            if(null != psiClass) {
+                configTreeTable.collapseAll();
+                configTreeTable.expand(((TreeNode) treeTableModel.getRoot()));
+            }
         }
     }
 }

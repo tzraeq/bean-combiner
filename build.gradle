@@ -15,8 +15,10 @@ repositories {
 }
 
 dependencies {
-    // 就IDEA有snakeyaml的引用，我们也还是需要使用我们自己的库，因为是相互独立的classloader
-    implementation 'org.yaml:snakeyaml:1.30'
+
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.10.5')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
     // lombok
     compileOnly 'org.projectlombok:lombok:1.18.20'

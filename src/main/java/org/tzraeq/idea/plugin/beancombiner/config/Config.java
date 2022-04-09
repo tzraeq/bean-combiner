@@ -1,10 +1,16 @@
 package org.tzraeq.idea.plugin.beancombiner.config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +26,7 @@ public class Config {
         private String target;
         private List<Combine> combine;
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         @Getter @Setter
         public static class Combine {
             private String from;
@@ -36,7 +43,7 @@ public class Config {
                     this.fields = new ArrayList<>();
                     for (Field field : fields) {
                         for (Field configField : configFields) {
-                            if(configField.getSource().equals(field.getSource())) {
+                            if(field.getSource().equals(configField.getSource())) {
                                 field.setTarget(configField.getTarget());
                                 field.setEnabled(true);
                                 configFields.remove(configField);
@@ -48,6 +55,7 @@ public class Config {
                 }
             }
 
+            @JsonSerialize(using = FieldSerializer.class)
             @NoArgsConstructor
             @Getter @Setter @Accessors(chain = true)
             public static class Field {
@@ -72,6 +80,20 @@ public class Config {
 
                     enabled = false;
                 }
+            }
+        }
+    }
+
+    public static class FieldSerializer extends JsonSerializer<Mapping.Combine.Field> {
+
+        @Override
+        public void serialize(Config.Mapping.Combine.Field value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            if(value.getEnabled()){
+                StringBuilder sb = new StringBuilder(value.getSource());
+                if(!value.getSource().equals(value.getTarget())) {
+                    sb.append("," + value.getTarget());
+                }
+                gen.writeString(sb.toString());
             }
         }
     }

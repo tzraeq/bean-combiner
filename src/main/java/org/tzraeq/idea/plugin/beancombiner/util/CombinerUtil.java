@@ -47,10 +47,30 @@ public class CombinerUtil {
             if (!method.hasParameters()
                     && !method.getContainingClass().getQualifiedName().equals(CommonClassNames.JAVA_LANG_OBJECT)) {
                 String fieldName = CombinerUtil.getFieldName(method.getName());
-                fields.add(new Config.Mapping.Combine.Field(fieldName, fieldName).setEnabled(defaultEnabled));
+                Config.Mapping.Combine.Field field = new Config.Mapping.Combine.Field(fieldName, fieldName);
+                field.setEnabled(defaultEnabled);
+                fields.add(field);
             }
         }
 
         return fields;
+    }
+
+    /**
+     * 根据字段名在对象中搜索方法，按照java bean的规则，不能同时存在同名字段的get和is方法
+     * @param clazz
+     * @param fieldName
+     * @return
+     */
+    @Nullable
+    public static PsiMethod getGetter(PsiClass clazz, String fieldName) {
+        PsiMethod[] methods = clazz.getAllMethods();
+        for (PsiMethod method : methods) {
+            String name = getFieldName(method.getName());
+            if(fieldName.equals(name)) {
+                return method;
+            }
+        }
+        return null;
     }
 }
