@@ -1,11 +1,15 @@
 <idea-plugin>
     <id>org.tzraeq.BeanCombiner</id>
     <name>Bean Combiner</name>
-    <vendor email="tzraeq@163.com" url="https://gitee.com/baOZe">baOZe</vendor>
+    <vendor email="tzraeq@163.com" url="https://github.com/tzraeq/bean-combiner">tzraeq</vendor>
 
     <description><![CDATA[
-    这个插件可以很方便地将其他bean的字段合并到当前bean。
-    <br/>This plugin can combine other bean fields to this bean easily.
+    <ul>
+        <li>This plugin can combine other bean fields to this bean easily. This plugin is wrote for java bean, but also you can use it in all class types, so it is recommended to use with lombok.</li>
+        <li>这个插件可以通过tool window，方便的从其他 java bean 选取字段合并到当前类。这个插件虽然是针对java bean而编写，但没有任何限制，只要是java类都可以使用，所以推荐与lombok配置使用。</li>
+    </ul>
+    <br/>
+    <img src=""  alt="Combine" width="700" />
     ]]></description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
@@ -13,6 +17,9 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
     <depends>org.jetbrains.plugins.yaml</depends>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+    <idea-version since-build="193"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->

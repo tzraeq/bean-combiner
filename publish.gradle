@@ -1,0 +1,16 @@
+def local = new Properties()
+local.load(rootProject.file('local.properties').newDataInputStream())
+
+signPlugin {
+    cliPath = local.getProperty("cliPath")
+    certificateChainFile = rootProject.file(local.getProperty("chain"))
+    privateKeyFile = rootProject.file(local.getProperty("private"))
+
+//    certificateChain = rootProject.file(local.getProperty("chain")).getText()
+//    privateKey = rootProject.file(local.getProperty("private")).getText()
+    password = local.getProperty("password")
+}
+
+publishPlugin {
+    token = local.getProperty("token")
+}

@@ -10,3 +10,7 @@
 /build/
 
 /build/classes/java/main/
+
+local.properties
+*.pem
+*.crt
