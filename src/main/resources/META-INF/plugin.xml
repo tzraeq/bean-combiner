@@ -10,6 +10,28 @@
     </ul>
     <br/>
     <img src="https://github.com/tzraeq/bean-combiner/raw/main/doc/image/bean-combiner.gif"  alt="Combine" width="700" />
+    <br/>
+    <h3>Install</h3>
+    <ol>
+        <li>Install a IntelliJ IDEA</li>
+        <li>Launch the IDE and open plugin settings</li>
+        <li>Search for "BeanCombiner" and click install</li>
+    </ol>
+    <br/>
+    <h3>Usage</h3>
+    <ol>
+        <li>Open an editor of a java class</li>
+        <li>Open the BeanCombiner tool window, click Add button, pick a Class</li>
+        <li>Check your prefered fields and click Commit button</li>
+        <li>Enjoy the updated class</li>
+    </ol>
+    <br/>
+    <h3>Scenarios</h3>
+    <ol>
+        <li>When you have to combine some entity fields from db into a dto class, and return to the web app or transfer to another interface</li>
+        <li>When you have to pick up some fields from a global configuration property, and easily keep the same type</li>
+        <li>When you want to pick up some fields from a constructor parameter of class type</li>
+    </ol>
     ]]></description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
