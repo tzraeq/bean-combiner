@@ -19,7 +19,11 @@
     <depends>org.jetbrains.plugins.yaml</depends>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="193"/>
+    <!-- 从2021.3版本开始，notification group必须用extension的方式 -->
+<!--    <idea-version since-build="193.*" until-build="212.*"/>-->
+    <!-- 从2020.3版本开始，notification group开始可以用extension的方式 -->
+<!--    <idea-version since-build="203.*" />-->
+    <idea-version since-build="192.*"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->

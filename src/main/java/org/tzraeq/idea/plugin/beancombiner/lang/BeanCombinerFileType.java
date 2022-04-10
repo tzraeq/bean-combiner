@@ -29,7 +29,7 @@ public class BeanCombinerFileType extends LanguageFileType {
     @Override
     @NotNull
     public String getDescription() {
-        return YAMLBundle.message("filetype.description.yaml");
+        return "BeanCombiner YAML config file";
     }
 
     @Override
