@@ -9,7 +9,7 @@
         <li>这个插件可以通过tool window，方便的从其他 java bean 选取字段合并到当前类。这个插件虽然是针对java bean而编写，但没有任何限制，只要是java类都可以使用，所以推荐与lombok配置使用。</li>
     </ul>
     <br/>
-    <img src=""  alt="Combine" width="700" />
+    <img src="https://github.com/tzraeq/bean-combiner/raw/main/doc/image/bean-combiner.gif"  alt="Combine" width="700" />
     ]]></description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
