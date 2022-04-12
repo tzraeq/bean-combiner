@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'org.tzraeq'
-version '1.0.0'
+version '1.0.1'
 
 apply plugin: 'java'
 
@@ -30,14 +30,17 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = '2019.3.1'
+    version = '2019.2'
+//    version = '2019.2.1'
+//    version = '2019.3.1'
+//    version = '2020.3.1'
     plugins = ['java', 'yaml']
     updateSinceUntilBuild = false
 }
 
 patchPluginXml {
     changeNotes = """
-      <h3>v1.0</h3>
+      <h3>v1.0.0</h3>
       <ul>
           <li>We can combine other bean's fields into this bean through tool window now.</li>
           <li>The combine actions will be saved into the config files for every modules in the module root dirs, you also can commit it to vcs as a dev resource.</li>
@@ -53,3 +56,7 @@ test {
 }
 
 apply from: "${rootDir}/publish.gradle"
+
+runIde {
+    jvmArgs '--add-exports', 'java.base/jdk.internal.vm=ALL-UNNAMED'
+}

@@ -45,7 +45,8 @@
 <!--    <idea-version since-build="193.*" until-build="212.*"/>-->
     <!-- 从2020.3版本开始，notification group开始可以用extension的方式 -->
 <!--    <idea-version since-build="203.*" />-->
-    <idea-version since-build="192.*"/>
+    <!-- 2019.2 如果不写minor version，无法兼容，因为官方提供的2019.2的可下载最低版本是2019.2.3 -->
+    <idea-version since-build="192.5728"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->

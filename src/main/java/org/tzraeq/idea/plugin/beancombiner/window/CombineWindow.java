@@ -15,6 +15,7 @@ import com.intellij.openapi.editor.event.EditorFactoryListener;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CombineWindow {
+
     private JBPanel content;
 
     private ConfigTreeTable configTreeTable;
@@ -128,7 +130,12 @@ public class CombineWindow {
                 this.psiClass = psiClass;
                 mapping = null;
                 try {
-                    config = ConfigUtil.load(ModuleUtilCore.findModuleForPsiElement(psiClass));
+                    Module module = ModuleUtilCore.findModuleForPsiElement(psiClass);
+                    if(null == module) {
+                        NotificationUtil.notifyError(editor.getProject(), "Cannot find the module of " + psiClass.getQualifiedName());
+                        return;
+                    }
+                    config = ConfigUtil.load(module);
 
                     if(null != config) {
                         List<Config.Mapping> mappingList = config.getMapping();
@@ -143,6 +150,10 @@ public class CombineWindow {
                         mapping = new Config.Mapping();
                         mapping.setTarget(psiClass.getQualifiedName());
                         mapping.setCombine(new ArrayList<>());
+                        config = new Config();
+                        config.setMapping(new ArrayList<>(){{
+                            add(mapping);
+                        }});
                     } else {
                         List combineList = new ArrayList();
                         for (Config.Mapping.Combine combine : mapping.getCombine()) {
@@ -160,7 +171,7 @@ public class CombineWindow {
                     configTreeTable.refreshSelection();
                     configTreeTable.expandAll();  // NOTE 展开全部节点，一定要最后做，否则会影响model中的选中值，下一版再修正吧
                 } catch (IOException e) {
-                    NotificationUtil.notifyError(editor.getProject(), "读取配置时发生IO异常：" + e.getMessage());
+                    NotificationUtil.notifyError(editor.getProject(), "Cannot read .beancombiner file：" + e.getMessage());
                 }
             }
         }
@@ -199,18 +210,24 @@ public class CombineWindow {
     }*/
 
     private void addCaretListener(Editor editor, CaretListener caretListener) {
-        if(PsiUtilBase.getPsiFileInEditor(editor, editor.getProject())
-                instanceof PsiJavaFile) {
+        Project project = editor.getProject();
+        if(null != project) {
+            if(PsiUtilBase.getPsiFileInEditor(editor, project)
+                    instanceof PsiJavaFile) {
 //                editor.getSelectionModel().addSelectionListener(this);
-            editor.getCaretModel().addCaretListener(caretListener);
+                editor.getCaretModel().addCaretListener(caretListener);
+            }
         }
     }
 
     private void removeCaretListener(Editor editor, CaretListener caretListener) {
-        if(PsiUtilBase.getPsiFileInEditor(editor, editor.getProject())
-                instanceof PsiJavaFile) {
+        Project project = editor.getProject();
+        if(null != project) {
+            if (PsiUtilBase.getPsiFileInEditor(editor, editor.getProject())
+                    instanceof PsiJavaFile) {
 //                editor.getSelectionModel().removeSelectionListener(this);
-            editor.getCaretModel().removeCaretListener(caretListener);
+                editor.getCaretModel().removeCaretListener(caretListener);
+            }
         }
     }
 
@@ -223,18 +240,24 @@ public class CombineWindow {
     class EditorListener implements FileEditorManagerListener, EditorFactoryListener, CaretListener{
         // FileEditorManagerListener
         public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-            if(event.getNewFile().getFileType() instanceof JavaFileType) {
-                Editor editor = event.getManager().getSelectedTextEditor();
-                loadConfig(editor, false);
-            } else {
-                clearTreeTable();
+            if(null != event.getNewFile()){
+                if(event.getNewFile().getFileType() instanceof JavaFileType) {
+                    Editor editor = event.getManager().getSelectedTextEditor();
+                    DumbService.getInstance(editor.getProject()).runWhenSmart(() -> {
+                        loadConfig(editor, false);
+                    });
+                } else {
+                    clearTreeTable();
+                }
             }
         }
 
         // CaretListener
         public void caretPositionChanged(@NotNull CaretEvent event) {
             Editor editor = event.getCaret().getEditor();
-            loadConfig(editor, false);
+            DumbService.getInstance(editor.getProject()).runWhenSmart(() -> {
+                loadConfig(editor, false);
+            });
         }
 
         // EditorFactoryListener

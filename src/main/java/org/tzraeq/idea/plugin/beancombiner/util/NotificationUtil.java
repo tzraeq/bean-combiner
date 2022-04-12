@@ -2,6 +2,7 @@ package org.tzraeq.idea.plugin.beancombiner.util;
 
 import com.intellij.notification.*;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.popup.BalloonBuilder;
 import icons.BeanCombinerIcons;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,7 +14,9 @@ public class NotificationUtil {
             new NotificationGroup("Bean Combiner", NotificationDisplayType.BALLOON, true);*/
 
     public static void notifyError(@Nullable Project project, String content) {
-        Notifications.Bus.notify(new Notification(content, BeanCombinerIcons.ConfigFile, NotificationType.ERROR), project);
+        Notifications.Bus.notify(new Notification(Notifications.SYSTEM_MESSAGES_GROUP_ID, BeanCombinerIcons.ConfigFile, NotificationType.ERROR)
+                .setTitle("Bean Combiner")
+                .setContent(content), project);
         /*NOTIFICATION_GROUP.createNotification(content, NotificationType.ERROR)
                 .setIcon(BeanCombinerIcons.ConfigFile)
                 .notify(project);*/
