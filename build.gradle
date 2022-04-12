@@ -40,11 +40,16 @@ intellij {
 
 patchPluginXml {
     changeNotes = """
+      <h3>v1.0.1</h3>
+      <ol>
+          <li>Fix the errors happend during the index refreshing.</li>
+      </ol>
       <h3>v1.0.0</h3>
-      <ul>
+      <ol>
           <li>We can combine other bean's fields into this bean through tool window now.</li>
           <li>The combine actions will be saved into the config files for every modules in the module root dirs, you also can commit it to vcs as a dev resource.</li>
-      </ul>"""
+      </ol>
+    """
 }
 
 tasks.withType(JavaCompile) {
