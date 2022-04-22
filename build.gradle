@@ -40,6 +40,11 @@ intellij {
 
 patchPluginXml {
     changeNotes = """
+      <h3>v1.0.2</h3>
+      <ol>
+          <li>Erase the ide error log when you open the class selection dialog and close it directly.</li>
+          <li>Fix empty fields after selecting a non-javabean class.</li>
+      </ol>
       <h3>v1.0.1</h3>
       <ol>
           <li>Fix the errors happend during the index refreshing.</li>
