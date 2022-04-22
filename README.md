@@ -12,7 +12,7 @@
 - UI是我临时找了一个CheckTreeTable，所以我改得不太好
 
 ## 版本
-
+### 此处是设计版本，发布版本请去Jetbrains的插件页面查看
 - V1.0
     - 可以通过右侧`tool window`进行属性选取
     - 选取后合并的配置，都会保存在类所在的模块根目录，文件名是`.beancombiner`，是yaml格式，
