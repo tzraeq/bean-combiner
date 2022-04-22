@@ -47,9 +47,11 @@ public class CombinerUtil {
             if (!method.hasParameters()
                     && !method.getContainingClass().getQualifiedName().equals(CommonClassNames.JAVA_LANG_OBJECT)) {
                 String fieldName = CombinerUtil.getFieldName(method.getName());
-                Config.Mapping.Combine.Field field = new Config.Mapping.Combine.Field(fieldName, fieldName);
-                field.setEnabled(defaultEnabled);
-                fields.add(field);
+                if(null != fieldName) { // NOTE bugfix 1.0.1版本之前没有判断
+                    Config.Mapping.Combine.Field field = new Config.Mapping.Combine.Field(fieldName, fieldName);
+                    field.setEnabled(defaultEnabled);
+                    fields.add(field);
+                }
             }
         }
 

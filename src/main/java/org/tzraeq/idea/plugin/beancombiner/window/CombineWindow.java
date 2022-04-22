@@ -301,23 +301,26 @@ public class CombineWindow {
                 PsiClass from = chooser.getSelected();
                 // TODO 解析并新增一个 Source Class，需要判断当前 Mapping 中是否已经有了
 
-                for (Config.Mapping.Combine combine : mapping.getCombine()) {
-                    if(combine.getFrom().equals(from.getQualifiedName())) {
-                        return;
+                if(null != from) {// NOTE bugfix 1.0.1之前没有判断
+                    for (Config.Mapping.Combine combine : mapping.getCombine()) {
+                        if(combine.getFrom().equals(from.getQualifiedName())) {
+                            return;
+                        }
                     }
-                }
-                Config.Mapping.Combine combine = new Config.Mapping.Combine();
-                combine.setFrom(from.getQualifiedName());
-                combine.setFields(CombinerUtil.getFields(from, true));
+                    Config.Mapping.Combine combine = new Config.Mapping.Combine();
+                    combine.setFrom(from.getQualifiedName());
+                    combine.setFields(CombinerUtil.getFields(from, true));
 
 
-                TreeTableNode treeTableNode = treeTableModel.addCombine(combine);
-                if(!configTreeTable.isSelected((TreeNode)treeTableModel.getRoot())){
-                    // NOTE 如果跟没有被完全选中，则需要调用下面的函数
-                    List checkedNodes = treeTableModel.getCheckedNodes(treeTableNode);
-                    configTreeTable.addPathsByNodes(checkedNodes);
+                    TreeTableNode treeTableNode = treeTableModel.addCombine(combine);
+                    if(!configTreeTable.isSelected((TreeNode)treeTableModel.getRoot())){
+                        // NOTE 如果跟没有被完全选中，则需要调用下面的函数
+                        List checkedNodes = treeTableModel.getCheckedNodes(treeTableNode);
+                        configTreeTable.addPathsByNodes(checkedNodes);
+                    }
+                    configTreeTable.expand(treeTableNode);
                 }
-                configTreeTable.expand(treeTableNode);
+
 
                 /*mapping.getCombine().add(combine);
                 treeTableModel.setRoot(mapping);
